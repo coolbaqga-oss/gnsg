@@ -12,12 +12,10 @@
             font-family: 'Pretendard', sans-serif;
             background-color: #f3f4f6;
         }
-        /* 스크롤바 숨기기 (깔끔한 앱 화면용) */
         ::-webkit-scrollbar {
             width: 0px;
             background: transparent;
         }
-        /* 로고 이미지 둥글고 예쁘게 */
         .app-logo {
             width: 36px;
             height: 36px;
@@ -27,7 +25,6 @@
             padding: 2px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        /* 팀장 하이라이트 애니메이션 */
         @keyframes shine {
             0% { transform: translateX(-100%) skewX(-15deg); }
             100% { transform: translateX(200%) skewX(-15deg); }
@@ -96,7 +93,6 @@
     </div>
 
     <script>
-        // ★ 회원님의 실제 구글 시트 CSV 링크 ★
         const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRH_Fs1olCu5C1oEiC88d6FekDDF0aNtG21_ex5sC7Y4JrGADra8HkOwwvj558rM7OUZgQMC7PpsORQ/pub?gid=1646981611&single=true&output=csv"; 
 
         let participantsData = [];
@@ -152,7 +148,6 @@
                         if(headers[j]) {
                             let headerName = headers[j].trim();
                             
-                            // 이름 단순화 (누락 방지를 위해 더 포괄적으로 매칭)
                             if(headerName.includes("이름")) headerName = "이름";
                             else if(headerName.includes("전화번호") || headerName.includes("연락처")) headerName = "전화번호";
                             else if(headerName.includes("사이즈")) headerName = "단체티 사이즈";
@@ -165,7 +160,6 @@
                     formattedData.push(obj);
                 }
 
-                // 빈 행 제거 (누구도 실수로 날아가지 않도록 이름만 있으면 전부 살림)
                 participantsData = formattedData.filter(person => person["이름"] && person["이름"].trim() !== "");
                 filterData(); 
             }
@@ -174,7 +168,6 @@
         function changeTab(tabName) {
             currentTab = tabName;
             
-            // 탭 디자인 변경
             const tabs = ['전체', '유치부', '어린이부'];
             tabs.forEach(t => {
                 const btn = document.getElementById(`tab-${t}`);
@@ -196,10 +189,8 @@
                 const group = (person["조 편성"] || "").toLowerCase();
                 const phone = (person["전화번호"] || "").toLowerCase();
                 
-                // 1. 검색어 필터
                 const matchSearch = name.includes(searchText) || group.includes(searchText) || phone.includes(searchText);
                 
-                // 2. 탭 필터
                 let matchTab = true;
                 if(currentTab !== '전체') {
                     if(currentTab === '유치부' && (name === '이서하' || group.includes('유치부'))) matchTab = true;
@@ -210,7 +201,7 @@
                 return matchSearch && matchTab;
             });
 
-            // ★ 완벽하게 복구된 정렬 기능 (입금자 먼저, 팀장 맨 아래 고정 해제) ★
+            // 정렬 로직: 완납자가 무조건 위로 오도록 정렬
             filtered.sort((a, b) => {
                 let payA = a["입금"] || '미납';
                 let payB = b["입금"] || '미납';
@@ -218,7 +209,7 @@
                 let isPaidA = (payA.includes("완납") || payA === "O" || payA.includes("확인")) ? 1 : 0;
                 let isPaidB = (payB.includes("완납") || payB === "O" || payB.includes("확인")) ? 1 : 0;
                 
-                return isPaidB - isPaidA; // 입금자(1)가 미납자(0)보다 무조건 위에 오도록 정렬
+                return isPaidB - isPaidA;
             });
 
             renderList(filtered);
@@ -237,7 +228,7 @@
             }
 
             dataToRender.forEach(person => {
-                // 입금확인 여부에 따른 뱃지 색상
+                // 입금확인 여부에 따른 뱃지 색상 (모든 탭에서 무조건 보이게 수정됨)
                 let payBadgeColor = "bg-gray-100 text-gray-600";
                 let payStatus = person["입금"] || '미납';
                 
@@ -249,7 +240,6 @@
                     payBadgeColor = "bg-red-100 text-red-700";
                 }
                 
-                // 조 편성 뱃지 색상 및 팀장 하이라이트 (맨 밑 고정은 없앴지만 카드 예쁜 건 유지)
                 let groupBadge = person["조 편성"] || '미배정';
                 let groupColor = "bg-blue-50 text-blue-600 border border-blue-100";
                 let cardSpecialClass = "";
@@ -273,7 +263,7 @@
                     groupColor = "bg-orange-50 text-orange-600 border border-orange-100";
                 }
 
-                // [전체] 탭에서만 입금 여부와 티셔츠 사이즈 표시
+                // 티셔츠 사이즈는 전체 탭에서만 보이게 유지 (원치 않으시면 지워드릴 수 있습니다)
                 const showDetails = (currentTab === '전체');
 
                 const card = document.createElement('div');
@@ -285,11 +275,9 @@
                             <span class="font-bold text-lg text-gray-800 ${isLeader ? 'text-xl' : ''}">${name || '이름 없음'}</span>
                             <span class="text-xs font-semibold px-2 py-0.5 rounded-md ${groupColor}">${groupBadge}</span>
                         </div>
-                        ${showDetails ? `
                         <span class="text-xs font-bold px-3 py-1.5 rounded-full ${payBadgeColor}">
                             입금: ${payStatus}
                         </span>
-                        ` : ''}
                     </div>
                     <div class="flex flex-col gap-1.5 text-sm text-gray-600 mt-1">
                         <div class="flex items-center gap-2 font-medium">
