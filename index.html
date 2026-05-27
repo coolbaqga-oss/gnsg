@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 💡 앱 이름(브라우저 탭 이름) 변경 -->
     <title>2026 7공동체 국내선교</title>
     
     <!-- 폰트 및 디자인(Tailwind CSS) 로드 -->
@@ -43,10 +44,11 @@
         <header class="bg-blue-600 text-white p-4 sticky top-0 z-10 shadow-md">
             <div class="flex justify-between items-center mb-3">
                 <div class="flex items-center gap-2">
-                    <h1 class="text-xl font-bold">📋 26 국내선교</h1>
+                    <!-- 💡 메인 타이틀 변경 -->
+                    <h1 class="text-xl font-bold">📋 국내선교 참가 명단</h1>
                     <!-- 💡 플렉스 박스(flex, items-center)를 추가하여 이모지와 글자의 수직 중앙을 강제로 맞춤 -->
                     <div id="total-count" class="flex items-center gap-1 text-sm font-black bg-yellow-400 text-blue-900 px-3 py-1 rounded-full shadow-md border border-yellow-300">
-                        <span>👥</span><span>총 0명</span>
+                        <span>👥</span><span class="mt-[1px]">총 0명</span>
                     </div>
                 </div>
                 <button onclick="fetchData()" class="bg-blue-700 hover:bg-blue-800 p-2 rounded-full transition">
