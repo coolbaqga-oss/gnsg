@@ -3,26 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 💡 앱 이름(브라우저 탭 이름) 변경 -->
     <title>2026 7공동체 국내선교</title>
     
-    <!-- 폰트 및 디자인(Tailwind CSS) 로드 -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 구글 시트 CSV 파싱을 위한 라이브러리 (PapaParse) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        /* 앱처럼 보이게 모바일 너비 제한 (PC에서 볼 때를 위해) */
+        body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .font-gowun { font-family: 'Gowun Dodum', sans-serif; }
+        
+        /* 💡 앱처럼 보이게 화면을 꽉 채우고(100vh), 바깥 스크롤을 막습니다(overflow: hidden) */
         .app-container {
             max-width: 480px;
             margin: 0 auto;
             background-color: #ffffff;
-            min-height: 100vh;
+            height: 100vh;
+            height: 100dvh; /* 모바일 브라우저 주소창 높이 대응 */
             box-shadow: 0 0 20px rgba(0,0,0,0.05);
             position: relative;
+            overflow: hidden; 
         }
         /* 로딩 스피너 애니메이션 */
         .loader {
@@ -38,31 +39,34 @@
     </style>
 </head>
 <body>
+    <!-- flex-col 설정으로 상하 분리 -->
     <div class="app-container flex flex-col">
         
-        <!-- 상단 헤더 영역 -->
-        <header class="bg-blue-600 text-white p-4 sticky top-0 z-10 shadow-md">
-            <div class="flex justify-between items-center mb-3">
-                <div class="flex items-center gap-2">
-                    <!-- 💡 메인 타이틀 변경 -->
-                    <h1 class="text-xl font-bold">📋 국내선교 참가 명단</h1>
-                    <!-- 💡 플렉스 박스(flex, items-center)를 추가하여 이모지와 글자의 수직 중앙을 강제로 맞춤 -->
-                    <div id="total-count" class="flex items-center gap-1 text-sm font-black bg-yellow-400 text-blue-900 px-3 py-1 rounded-full shadow-md border border-yellow-300">
-                        <span>👥</span><span class="mt-[1px]">총 0명</span>
+        <!-- 상단 헤더 영역 (shrink-0으로 찌그러짐 방지, 높이 고정) -->
+        <header class="bg-blue-600 text-white p-4 shrink-0 shadow-md z-10 relative">
+            <div class="flex items-center justify-between mb-3 gap-2">
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                    <!-- 💡 깃허브에 올릴 이미지 파일 이름(logo.jpeg)을 여기에 맞췄습니다 -->
+                    <img src="logo.jpeg" alt="로고" class="h-8 w-8 bg-white rounded-full p-0.5 object-cover shrink-0 shadow-sm" onerror="this.src='https://placehold.co/100x100/ffffff/3b82f6?text=로고'" />
+                    <h1 class="text-xl font-bold truncate">국내선교 참가 명단</h1>
+                    
+                    <!-- 💡 총 인원 뱃지 -->
+                    <div id="total-count" class="flex items-center gap-1 text-sm font-black bg-yellow-400 text-blue-900 px-2 py-0.5 rounded-full shadow-md border border-yellow-300 whitespace-nowrap">
                     </div>
                 </div>
-                <button onclick="fetchData()" class="bg-blue-700 hover:bg-blue-800 p-2 rounded-full transition">
+                
+                <button onclick="fetchData()" class="bg-blue-700 hover:bg-blue-800 p-2 rounded-full transition shrink-0 shadow-sm">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </button>
             </div>
             <!-- 검색 바 -->
-            <input type="text" id="searchInput" placeholder="이름으로 검색..." class="w-full p-2 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300" onkeyup="filterList()">
+            <input type="text" id="searchInput" placeholder="이름이나 조, 전화번호로 검색..." class="w-full p-2 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300 shadow-inner" onkeyup="filterList()">
         </header>
 
-        <!-- 메인 콘텐츠 영역 (데이터가 그려지는 곳) -->
+        <!-- 메인 콘텐츠 영역 (명단이 그려지고, 여기서만 위아래 스크롤이 발생합니다) -->
         <main class="flex-1 p-4 overflow-y-auto bg-gray-50" id="app-content">
             
-            <!-- 💡 추가된 부분: 부서별 탭 카테고리 메뉴 -->
+            <!-- 부서별 탭 카테고리 메뉴 -->
             <div class="flex space-x-1 mb-4 bg-gray-200 p-1 rounded-lg">
                 <button id="tab-전체" class="flex-1 py-1.5 text-sm font-bold rounded-md bg-white shadow text-blue-600 transition" onclick="setTab('전체')">전체</button>
                 <button id="tab-유치부" class="flex-1 py-1.5 text-sm font-bold rounded-md text-gray-500 hover:text-gray-700 transition" onclick="setTab('유치부')">유치부</button>
@@ -77,31 +81,17 @@
             <div id="error-message" class="hidden bg-red-100 text-red-700 p-3 rounded mb-4 text-sm text-center"></div>
             
             <!-- 카드 리스트 컨테이너 -->
-            <div id="data-list" class="flex flex-col gap-3"></div>
+            <div id="data-list" class="flex flex-col gap-3 pb-6"></div>
         </main>
-
-        <!-- 하단 네비게이션 (앱 느낌을 위한 장식) -->
-        <footer class="bg-white border-t p-3 flex justify-around text-xs text-gray-500">
-            <div class="flex flex-col items-center text-blue-600 font-bold">
-                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15.21 12a3 3 0 11-6.42 0m6.42 0a6 6 0 01-6.42 0"></path></svg>
-                참가자 명단
-            </div>
-            <div class="flex flex-col items-center hover:text-blue-600 transition cursor-pointer" onclick="showInfo()">
-                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                설정 방법
-            </div>
-        </footer>
     </div>
 
     <script>
-        // ★ 설문지가 연동된 새로운 구글 시트 링크 적용 ★
+        // ★ 회원님의 구글 시트 링크 ★
         const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRH_Fs1olCu5C1oEiC88d6FekDDF0aNtG21_ex5sC7Y4JrGADra8HkOwwvj558rM7OUZgQMC7PpsORQ/pub?gid=27496411&single=true&output=csv"; 
 
-        // 전역 데이터 저장소
         let participantsData = [];
-        let currentCategory = '전체'; // 💡 현재 선택된 탭을 기억하는 변수 추가
+        let currentCategory = '전체';
 
-        // 화면 로드 시 즉시 데이터 가져오기 실행
         window.onload = function() {
             fetchData();
         };
@@ -115,66 +105,34 @@
             loading.style.display = 'block';
             errorMsg.classList.add('hidden');
 
-            // URL 형식 검사
-            if (GOOGLE_SHEET_CSV_URL && GOOGLE_SHEET_CSV_URL.includes('/edit')) {
-                setTimeout(() => {
-                    loading.style.display = 'none';
-                    errorMsg.innerHTML = "<strong>⚠️ 잘못된 링크 형식입니다!</strong><br>일반 공유 링크(주소에 '/edit' 포함)를 넣으셨습니다.<br>반드시 [파일] -> [공유] -> <strong>[웹에 게시]</strong>에서 <strong>'CSV'</strong> 형식으로 배포한 주소를 넣어주세요.";
-                    errorMsg.classList.remove('hidden');
-                }, 500);
-                return;
-            }
-
-            // 링크가 없을 경우 회원님 시트와 동일한 구조의 가짜 데이터를 보여줍니다.
-            if (!GOOGLE_SHEET_CSV_URL) {
-                setTimeout(() => {
-                    const mockData = [
-                        ["26년도 국내선교 참가자 통합 관리대장", "", "", "", "", "", "", ""],
-                        ["", "", "기준일: 2026.05.27 /", "", "", "", "", ""],
-                        ["순번", "이름", "전화번호", "주민등록번호", "단체티 사이즈", "입금확인", "조 편성", "비고"],
-                        ["1", "곽미경", "010-2787-5334", "831112-2017812", "XL (105)", "미납", "미배정", ""],
-                        ["2", "박근종", "010-8097-3093", "870911-1005115", "XL (105)", "완납", "1조", "개별 연락 요망"],
-                        ["3", "최지나", "010-2445-9176", "840508-2030412", "3XL (115)", "미납", "회계", ""],
-                        ["4", "이서하", "010-6738-1257", "890807-2082625", "2XL (110)", "미납", "유치부", ""]
-                    ];
-                    processData(mockData);
-                }, 800);
-                return;
-            }
-
-            // 실제 구글 시트 URL이 있을 경우 파싱
             Papa.parse(GOOGLE_SHEET_CSV_URL, {
                 download: true,
-                header: false, // 1~2번째 줄의 병합된 제목을 무시하기 위해 'false'로 설정하고 직접 찾습니다.
+                header: false,
                 complete: function(results) {
                     processData(results.data);
                 },
                 error: function(err) {
                     loading.style.display = 'none';
-                    errorMsg.innerHTML = "<strong>⚠️ 데이터를 불러오는데 실패했습니다.</strong><br>1. 링크가 '웹에 게시(CSV)' 링크가 맞는지 확인해주세요.<br>2. 인터넷 연결 상태를 확인해주세요.";
+                    errorMsg.innerHTML = "<strong>⚠️ 데이터를 불러오는데 실패했습니다.</strong><br>인터넷 연결 상태를 확인해주세요.";
                     errorMsg.classList.remove('hidden');
                 }
             });
         }
 
-        // 배열 형태의 원본 데이터를 처리하는 함수
         function processData(rawData) {
             document.getElementById('loading').style.display = 'none';
             const errorMsg = document.getElementById('error-message');
 
             if(rawData && rawData.length > 0) {
-                // 1. 긴 설문 제목 속에서 "이름"이라는 단어가 포함된 칸이 있는 줄을 찾아냅니다.
                 let headerIndex = rawData.findIndex(row => row.some(cell => typeof cell === 'string' && cell.includes("이름")));
 
                 if(headerIndex === -1) {
-                    errorMsg.innerHTML = `<strong>⚠️ '이름' 열을 찾을 수 없습니다.</strong><br>시트 항목 중에 <strong>'이름'</strong>이라는 칸이 있는지 확인해주세요.`;
+                    errorMsg.innerHTML = `<strong>⚠️ '이름' 열을 찾을 수 없습니다.</strong>`;
                     errorMsg.classList.remove('hidden');
                     return;
                 }
 
                 const headers = rawData[headerIndex];
-                
-                // 💡 핵심: 구글 설문지의 긴 질문 제목을 우리가 쓰는 짧은 단어로 자동 통역(매핑)합니다.
                 let headerMap = {};
                 for(let j = 0; j < headers.length; j++) {
                     let h = headers[j] ? headers[j].trim() : "";
@@ -188,12 +146,10 @@
 
                 let formattedData = [];
 
-                // 2. 찾아낸 제목줄 아래부터 실제 데이터 묶음으로 변환
                 for(let i = headerIndex + 1; i < rawData.length; i++) {
                     let row = rawData[i];
                     let obj = {};
                     for(let j = 0; j < headers.length; j++) {
-                        // headerMap에 있는 항목만 쏙쏙 골라 담습니다. (주민번호, 타임스탬프는 자동 제외됨)
                         if(headerMap[j]) { 
                             obj[headerMap[j]] = row[j] ? row[j].trim() : "";
                         }
@@ -201,67 +157,57 @@
                     formattedData.push(obj);
                 }
 
-                // 3. 이름이 없는 빈 행 걸러내기
                 participantsData = formattedData.filter(person => person["이름"] && person["이름"] !== "");
-                
                 filterList();
             }
         }
 
         function renderList(dataToRender) {
             const listContainer = document.getElementById('data-list');
-            const totalCountEl = document.getElementById('total-count'); // 💡 총 인원수 표시 요소 찾기
+            const totalCountEl = document.getElementById('total-count'); 
             
             listContainer.innerHTML = '';
 
-            // 💡 텍스트 업데이트 시 수직 중앙 정렬을 위해 span 태그로 감싸서 넣습니다.
             if (totalCountEl) {
-                totalCountEl.innerHTML = `<span>👥</span><span class="mt-[1px]">총 ${dataToRender.length}명</span>`;
+                totalCountEl.innerHTML = `<span class="mt-[1px]">👥</span><span class="mt-[1px]">총 ${dataToRender.length}명</span>`;
             }
 
             if(dataToRender.length === 0) {
-                listContainer.innerHTML = '<p class="text-center text-gray-500 mt-5">검색 결과가 없습니다.</p>';
+                listContainer.innerHTML = '<p class="text-center text-gray-500 mt-5 font-gowun">명단이 없습니다.</p>';
                 return;
             }
 
-            // 💡 현재 탭이 '전체'인지 확인 (전체일 때만 입금, 티셔츠 표시)
             const showExtraInfo = (currentCategory === '전체');
 
             dataToRender.forEach(person => {
-                // 입금확인 여부에 따른 뱃지 색상 결정
                 let payBadgeColor = "bg-gray-100 text-gray-600";
                 let payStatus = person["입금확인"] || '미납';
                 if(payStatus.includes("완납") || payStatus === "O") payBadgeColor = "bg-green-100 text-green-700";
                 else if(payStatus.includes("미납") || payStatus === "X") payBadgeColor = "bg-red-100 text-red-700";
                 
-                // 조 편성 뱃지 색상 (회계, 유치부 등 특별 역할에 색상 부여)
                 let groupBadge = person["조 편성"] || '미배정';
                 let groupColor = "bg-blue-50 text-blue-600";
                 if(groupBadge.includes("회계")) groupColor = "bg-purple-100 text-purple-700";
                 else if(groupBadge.includes("유치부")) groupColor = "bg-pink-100 text-pink-700";
                 else if(groupBadge.includes("어린이부")) groupColor = "bg-orange-100 text-orange-700";
 
-                // ★ 사역팀장(김미라, 이서하) 부서별 강조 효과 설정 ★
                 let cardStyle = "bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col gap-2";
                 let leaderBadge = "";
                 let nameColor = "text-gray-800";
                 let borderColor = "";
                 
                 if (person["이름"] === "김미라") {
-                    // 어린이부 팀장 (따뜻한 주황색 계열)
                     cardStyle = "bg-orange-50 p-4 rounded-lg shadow-md border-2 border-orange-400 flex flex-col gap-2 relative overflow-hidden";
                     leaderBadge = `<span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-gradient-to-r from-orange-400 to-orange-600 text-white shadow-sm ml-1 animate-pulse">👑 어린이부 팀장</span>`;
                     nameColor = "text-orange-900";
                     borderColor = "border-orange-200";
                 } else if (person["이름"] === "이서하") {
-                    // 유치부 팀장 (화사한 분홍색 계열)
                     cardStyle = "bg-pink-50 p-4 rounded-lg shadow-md border-2 border-pink-400 flex flex-col gap-2 relative overflow-hidden";
                     leaderBadge = `<span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-gradient-to-r from-pink-400 to-pink-600 text-white shadow-sm ml-1 animate-pulse">👑 유치부 팀장</span>`;
                     nameColor = "text-pink-900";
                     borderColor = "border-pink-200";
                 }
 
-                // 💡 조건에 따라 보여줄 HTML 조각 결정 (전체 탭에서만 보임)
                 let payBadgeHTML = showExtraInfo ? `
                     <span class="text-xs font-bold px-3 py-1.5 rounded-full ${payBadgeColor}">
                         입금: ${payStatus}
@@ -275,7 +221,6 @@
                     </div>
                 ` : '';
 
-                // 카드 HTML 구조 생성
                 const card = document.createElement('div');
                 card.className = cardStyle;
                 
@@ -301,44 +246,37 @@
             });
         }
 
-        // 💡 추가된 부분: 탭 변경 기능
         function setTab(category) {
             currentCategory = category;
             
-            // 탭 디자인(색상) 변경
             const tabs = ['전체', '유치부', '어린이부'];
             tabs.forEach(tab => {
                 const el = document.getElementById('tab-' + tab);
                 if(tab === category) {
-                    el.className = "flex-1 py-1.5 text-sm font-bold rounded-md bg-white shadow text-blue-600 transition"; // 선택된 탭
+                    el.className = "flex-1 py-1.5 text-sm font-bold rounded-md bg-white shadow text-blue-600 transition"; 
                 } else {
-                    el.className = "flex-1 py-1.5 text-sm font-bold rounded-md text-gray-500 hover:text-gray-700 transition"; // 선택 안 된 탭
+                    el.className = "flex-1 py-1.5 text-sm font-bold rounded-md text-gray-500 hover:text-gray-700 transition"; 
                 }
             });
             
-            // 리스트 다시 필터링해서 보여주기
             filterList();
         }
 
-        // 💡 수정된 부분: 검색, 탭 필터링, 그리고 정렬(팀장 뒤로) 기능 통합
         function filterList() {
             const query = document.getElementById('searchInput').value.toLowerCase();
             
             let filtered = participantsData.filter(person => {
-                // 1. 검색어 검사
                 const matchQuery = 
                     (person["이름"] && person["이름"].toLowerCase().includes(query)) ||
                     (person["조 편성"] && person["조 편성"].toLowerCase().includes(query)) ||
                     (person["전화번호"] && person["전화번호"].includes(query)) ||
                     (person["비고"] && person["비고"].toLowerCase().includes(query));
                 
-                // 2. 탭 카테고리 검사 ('전체'가 아니면 해당 부서 이름이 조 편성에 있는지 확인)
                 let matchCategory = true;
                 if(currentCategory !== '전체') {
                     const group = person["조 편성"] || "";
                     matchCategory = group.includes(currentCategory);
                     
-                    // 💡 아직 구글 시트에 '조 편성' 칸을 안 만들었어도 팀장님들은 각 탭에 강제로 보이도록 예외 처리
                     if(currentCategory === '어린이부' && person["이름"] === "김미라") matchCategory = true;
                     if(currentCategory === '유치부' && person["이름"] === "이서하") matchCategory = true;
                 }
@@ -346,32 +284,15 @@
                 return matchQuery && matchCategory;
             });
 
-            // 3. 정렬 로직: '전체' 탭이 아닐 때만 팀장을 맨 뒤로 정렬
             if (currentCategory !== '전체') {
                 filtered.sort((a, b) => {
                     const aIsLeader = (a["이름"] === "김미라" || a["이름"] === "이서하") ? 1 : 0;
                     const bIsLeader = (b["이름"] === "김미라" || b["이름"] === "이서하") ? 1 : 0;
-                    
                     return aIsLeader - bIsLeader;
                 });
             }
 
             renderList(filtered);
-        }
-
-        function showInfo() {
-            const errorMsg = document.getElementById('error-message');
-            errorMsg.innerHTML = `
-                <strong>내 구글 시트 연결하는 법:</strong><br><br>
-                1. 구글 시트 메뉴 [파일] -> [공유] -> [웹에 게시]<br>
-                2. '전체 문서'를 <strong>'CSV'</strong>로 변경 후 게시 버튼 클릭<br>
-                3. 생성된 링크 복사<br>
-                4. 소스코드의 <code>GOOGLE_SHEET_CSV_URL</code> 안에 링크 붙여넣기<br><br>
-                <button onclick="document.getElementById('error-message').classList.add('hidden')" class="mt-2 bg-blue-200 text-blue-800 px-3 py-1 rounded">닫기</button>
-            `;
-            errorMsg.classList.remove('hidden');
-            errorMsg.classList.replace('bg-red-100', 'bg-blue-50');
-            errorMsg.classList.replace('text-red-700', 'text-blue-800');
         }
     </script>
 </body>
