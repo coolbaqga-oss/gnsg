@@ -226,7 +226,7 @@
                 filtered.sort((a, b) => {
                     const aIsLeader = (a["이름"] === "김미라" || a["이름"] === "이서하") ? 1 : 0;
                     const bIsLeader = (b["이름"] === "김미라" || b["이름"] === "이서하") ? 1 : 0;
-                    return aIsLeader - bIsLeader;
+                    return bIsLeader - aIsLeader;
                 });
             }
 
