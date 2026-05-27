@@ -42,7 +42,13 @@
         <!-- 상단 헤더 영역 -->
         <header class="bg-blue-600 text-white p-4 sticky top-0 z-10 shadow-md">
             <div class="flex justify-between items-center mb-3">
-                <h1 class="text-xl font-bold">📋 참가자 관리</h1>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-xl font-bold">📋 참가자 관리</h1>
+                    <!-- 💡 플렉스 박스(flex, items-center)를 추가하여 이모지와 글자의 수직 중앙을 강제로 맞춤 -->
+                    <div id="total-count" class="flex items-center gap-1 text-sm font-black bg-yellow-400 text-blue-900 px-3 py-1 rounded-full shadow-md border border-yellow-300">
+                        <span>👥</span><span>총 0명</span>
+                    </div>
+                </div>
                 <button onclick="fetchData()" class="bg-blue-700 hover:bg-blue-800 p-2 rounded-full transition">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </button>
@@ -86,9 +92,8 @@
     </div>
 
     <script>
-        // ★ 여기에 구글 시트에서 "웹에 게시"한 CSV 링크를 넣으세요! ★
-        // (현재는 빈 칸으로 두면 테스트용 화면이 나옵니다)
-        const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRH_Fs1olCu5C1oEiC88d6FekDDF0aNtG21_ex5sC7Y4JrGADra8HkOwwvj558rM7OUZgQMC7PpsORQ/pub?gid=1646981611&single=true&output=csv"; 
+        // ★ 설문지가 연동된 새로운 구글 시트 링크 적용 ★
+        const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRH_Fs1olCu5C1oEiC88d6FekDDF0aNtG21_ex5sC7Y4JrGADra8HkOwwvj558rM7OUZgQMC7PpsORQ/pub?gid=27496411&single=true&output=csv"; 
 
         // 전역 데이터 저장소
         let participantsData = [];
@@ -156,8 +161,8 @@
             const errorMsg = document.getElementById('error-message');
 
             if(rawData && rawData.length > 0) {
-                // 1. 위쪽 제목 줄들을 무시하고 "이름"이라는 글자가 포함된 '진짜 데이터 기준 줄' 찾기
-                let headerIndex = rawData.findIndex(row => row.includes("이름"));
+                // 1. 긴 설문 제목 속에서 "이름"이라는 단어가 포함된 칸이 있는 줄을 찾아냅니다.
+                let headerIndex = rawData.findIndex(row => row.some(cell => typeof cell === 'string' && cell.includes("이름")));
 
                 if(headerIndex === -1) {
                     errorMsg.innerHTML = `<strong>⚠️ '이름' 열을 찾을 수 없습니다.</strong><br>시트 항목 중에 <strong>'이름'</strong>이라는 칸이 있는지 확인해주세요.`;
@@ -166,6 +171,19 @@
                 }
 
                 const headers = rawData[headerIndex];
+                
+                // 💡 핵심: 구글 설문지의 긴 질문 제목을 우리가 쓰는 짧은 단어로 자동 통역(매핑)합니다.
+                let headerMap = {};
+                for(let j = 0; j < headers.length; j++) {
+                    let h = headers[j] ? headers[j].trim() : "";
+                    if(h.includes("이름")) headerMap[j] = "이름";
+                    else if(h.includes("전화번호")) headerMap[j] = "전화번호";
+                    else if(h.includes("단체티")) headerMap[j] = "단체티 사이즈";
+                    else if(h.includes("입금")) headerMap[j] = "입금확인";
+                    else if(h.includes("조 편성") || h === "조") headerMap[j] = "조 편성";
+                    else if(h.includes("비고")) headerMap[j] = "비고";
+                }
+
                 let formattedData = [];
 
                 // 2. 찾아낸 제목줄 아래부터 실제 데이터 묶음으로 변환
@@ -173,8 +191,9 @@
                     let row = rawData[i];
                     let obj = {};
                     for(let j = 0; j < headers.length; j++) {
-                        if(headers[j]) { // 빈 제목 무시
-                            obj[headers[j].trim()] = row[j] ? row[j].trim() : "";
+                        // headerMap에 있는 항목만 쏙쏙 골라 담습니다. (주민번호, 타임스탬프는 자동 제외됨)
+                        if(headerMap[j]) { 
+                            obj[headerMap[j]] = row[j] ? row[j].trim() : "";
                         }
                     }
                     formattedData.push(obj);
@@ -183,14 +202,20 @@
                 // 3. 이름이 없는 빈 행 걸러내기
                 participantsData = formattedData.filter(person => person["이름"] && person["이름"] !== "");
                 
-                // 💡 렌더링 전에 필터 및 정렬(팀장 맨 뒤로)을 거치도록 renderList 대신 filterList 호출
                 filterList();
             }
         }
 
         function renderList(dataToRender) {
             const listContainer = document.getElementById('data-list');
+            const totalCountEl = document.getElementById('total-count'); // 💡 총 인원수 표시 요소 찾기
+            
             listContainer.innerHTML = '';
+
+            // 💡 텍스트 업데이트 시 수직 중앙 정렬을 위해 span 태그로 감싸서 넣습니다.
+            if (totalCountEl) {
+                totalCountEl.innerHTML = `<span>👥</span><span class="mt-[1px]">총 ${dataToRender.length}명</span>`;
+            }
 
             if(dataToRender.length === 0) {
                 listContainer.innerHTML = '<p class="text-center text-gray-500 mt-5">검색 결과가 없습니다.</p>';
@@ -308,7 +333,12 @@
                 // 2. 탭 카테고리 검사 ('전체'가 아니면 해당 부서 이름이 조 편성에 있는지 확인)
                 let matchCategory = true;
                 if(currentCategory !== '전체') {
-                    matchCategory = person["조 편성"] && person["조 편성"].includes(currentCategory);
+                    const group = person["조 편성"] || "";
+                    matchCategory = group.includes(currentCategory);
+                    
+                    // 💡 아직 구글 시트에 '조 편성' 칸을 안 만들었어도 팀장님들은 각 탭에 강제로 보이도록 예외 처리
+                    if(currentCategory === '어린이부' && person["이름"] === "김미라") matchCategory = true;
+                    if(currentCategory === '유치부' && person["이름"] === "이서하") matchCategory = true;
                 }
                 
                 return matchQuery && matchCategory;
