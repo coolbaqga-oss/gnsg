@@ -113,7 +113,7 @@
                     </button>
                 </div>
                 
-                <!-- 팝업 내용 (가독성/가시성 대폭 상향 버전) -->
+                <!-- 팝업 내용 -->
                 <div class="p-4 overflow-y-auto">
                     <div style="padding: 0.5rem 0;">
                       <h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">2026 국내선교 7월 24일~26일 금·토·일 타임테이블</h2>
@@ -399,13 +399,54 @@
                     leaderBadge = `<span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-gradient-to-r from-pink-400 to-pink-600 text-white shadow-sm ml-1 animate-pulse">👑 유치부 팀장</span>`;
                 }
 
+                // 💡 새롭게 적용된 조 편성 뱃지 (태그) 스타일
+                let groupBadge = p["조 편성"] || '미배정';
+                let groupColor = "bg-blue-50 text-blue-600 border border-blue-100";
+                if(groupBadge.includes("회계")) groupColor = "bg-purple-50 text-purple-600 border border-purple-100";
+                else if(groupBadge.includes("유치부")) groupColor = "bg-pink-50 text-pink-600 border border-pink-100";
+                else if(groupBadge.includes("어린이부")) groupColor = "bg-orange-50 text-orange-600 border border-orange-100";
+
+                // 전체 탭에서만 보이는 입금 뱃지
+                let payBadgeColor = "bg-gray-100 text-gray-600";
+                let payStatus = p["입금확인"] || '미납';
+                if(payStatus.includes("완납") || payStatus === "O" || payStatus.includes("확인") || payStatus.includes("완료")) {
+                    payStatus = "완납";
+                    payBadgeColor = "bg-green-100 text-green-700";
+                } else {
+                    payStatus = "미납";
+                    payBadgeColor = "bg-red-100 text-red-700";
+                }
+
+                let payBadgeHTML = showExtraInfo ? `
+                    <span class="text-xs font-bold px-3 py-1.5 rounded-full ${payBadgeColor} shrink-0">
+                        입금: ${payStatus}
+                    </span>
+                ` : '';
+
+                // 전체 탭에서만 보이는 단체티 사이즈
+                let tshirtHTML = showExtraInfo && p["단체티 사이즈"] ? `
+                    <div class="flex items-center gap-1.5 mt-2.5 text-sm text-gray-600">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        티셔츠: <span class="font-semibold text-gray-700">${p["단체티 사이즈"]}</span>
+                    </div>
+                ` : '';
+
+                // 비고란 데이터가 있으면 노란색 박스로 띄워주기
+                let bigoHTML = p["비고"] ? `<div class="text-xs text-gray-600 bg-yellow-50 p-2 rounded-lg mt-2 border border-yellow-100">📌 ${p["비고"]}</div>` : '';
+
                 card.className = cardStyle;
                 card.innerHTML = `
-                    <div class="flex items-center flex-wrap gap-1 mb-1">
-                        <span class="${nameStyle}">${p["이름"]}</span>
-                        ${leaderBadge}
+                    <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                        <div class="flex items-center flex-wrap gap-1.5">
+                            <span class="${nameStyle}">${p["이름"]}</span>
+                            ${leaderBadge}
+                            <!-- 휴대폰 번호를 지우고 이 자리에 조 편성 뱃지를 배치했습니다 -->
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded-md ${groupColor}">${groupBadge}</span>
+                        </div>
+                        ${payBadgeHTML}
                     </div>
-                    <div class="text-sm text-gray-500 font-medium">${p["조 편성"] || '미배정'} | ${p["전화번호"] || ''}</div>
+                    ${tshirtHTML}
+                    ${bigoHTML}
                 `;
                 list.appendChild(card);
             });
